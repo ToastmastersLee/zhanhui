@@ -1,0 +1,56 @@
+*.exe
+*.DS_Store
+
+
+# ===== Zip =====
+*.zip
+*.rar
+*.gz
+*.tar.gz
+
+# ===== Media files =====
+*.ts
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wmv
+*.flv
+
+*.mp3
+*.wav
+*.aac
+*.flac
+*.ogg
+*.m4a
+
+# ===== Documents =====
+*.drawio
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.pdf
+*.xml
+
+# ===== Images (raw / heavy) =====
+*.psd
+*.tiff
+*.bmp
+*.png
+*.jpg
+
+# ===== Local asset folders =====
+img/
+bak/
+backup/
+temp/
+tmp/
+assets/
+assets_local/
+media/
+videos/
+raw/
