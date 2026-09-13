@@ -1,0 +1,16 @@
+schema_version = 1
+project_id = "zhanhui"
+display_name = "Zhanhui"
+selection_mode = "git_ignored_untracked"
+hash_algorithm = "sha256"
+tool_min_version = "1.0.0"
+remote_key = "google-drive:zhanhui"
+
+[git]
+remote = "origin"
+
+[safety]
+default_direction = "office_to_home"
+trash_deletes = true
+max_delete_count = 20
+max_delete_ratio = 0.02

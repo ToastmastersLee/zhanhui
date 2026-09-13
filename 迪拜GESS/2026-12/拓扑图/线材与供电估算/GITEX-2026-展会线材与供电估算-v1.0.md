@@ -112,7 +112,7 @@ status: "draft - lengths and final electrical design pending"
 
 ## 6. NPS150 BYOM 区
 
-<img src="D:\Github\IQ\QNEX_Trade_Show\迪拜GESS\2026-12\拓扑图\线材与供电估算\img\image-20260819163237641.png" alt="image-20260819163237641" style="zoom:50%;" /> 
+<img src=".\img\image-20260819163237641.png" alt="image-20260819163237641" style="zoom:50%;" /> 
 
 | No. | 长度 | 类型规格 | 用途与备注 |
 | ---- | ---- | -------- | ---------- |
