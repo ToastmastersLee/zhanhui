@@ -3,7 +3,7 @@ project_id = "zhanhui"
 display_name = "Zhanhui"
 selection_mode = "git_ignored_untracked"
 hash_algorithm = "sha256"
-tool_min_version = "1.1.0"
+tool_min_version = "1.2.0"
 remote_key = "google-drive:zhanhui"
 
 [git]
@@ -16,3 +16,7 @@ pull_deletes_require_flag = true
 trash_deletes = true
 max_delete_count = 20
 max_delete_ratio = 0.02
+
+[performance]
+fast_media_enabled = true
+fast_media_extensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".flv", ".ts", ".m4v"]
