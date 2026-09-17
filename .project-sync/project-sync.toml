@@ -3,7 +3,7 @@ project_id = "zhanhui"
 display_name = "Zhanhui"
 selection_mode = "git_ignored_untracked"
 hash_algorithm = "sha256"
-tool_min_version = "1.3.0"
+tool_min_version = "1.4.0"
 remote_key = "google-drive:zhanhui"
 
 [git]
@@ -24,3 +24,5 @@ max_delete_ratio = 0.02
 [performance]
 fast_media_enabled = true
 fast_media_extensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".flv", ".ts", ".m4v"]
+# 日常 pull 信任已发布 manifest，只核对远端文件存在和大小；完整远端 SHA 审计使用 verify。
+pull_remote_hash_mode = "manifest_trust"
