@@ -54,3 +54,6 @@ assets_local/
 media/
 videos/
 raw/
+
+# 项目同步的机器本地基线和隔离区（不进入 Git 或 Drive 资产）
+.project-sync/local-state/
