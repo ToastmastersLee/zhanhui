@@ -4,7 +4,7 @@ project_name: "GITEX GLOBAL Dubai 2026"
 event_identity: confirmed
 status: active
 current_phase: "P1 拓扑与展品冻结"
-last_updated: "2026-08-19"
+last_updated: "2026-10-12"
 handled_by_me: true
 ---
 
@@ -38,8 +38,8 @@ handled_by_me: true
 
 | 范围 | 当前结论 / 待确认 |
 | --- | --- |
-| 已确认方向 | `LDP100 + OPS` 已恢复；`HAS10` 替代 HAS20；C2500S 随人携带往返、不出售。 |
-| 待冻结链路 | `iPad / NDP600` 二选一、B3821 接入对象、LCS 最终摄像机组合、NPS150/WP50/S350/HY300 演示链路、CPL50/QCD100 是否实接。 |
+| 已确认方向 | `LDP100 + OPS` 已恢复；`HAS10` 替代 HAS20；C2500S 随人携带往返、不出售；`QCD100` 确认为 Dongle 放置收纳盒（无源物理配件，无需供电及信号线）。 |
+| 待冻结链路 | `iPad / NDP600` 二选一、B3821 接入对象、LCS 最终摄像机组合、NPS150/WP50/S350/HY300 演示链路、`CPL50` 是否实接演示。 |
 | OPS | 当前记录为 `4.PC.ED.I7.Z0013`；适用展品范围和 `ZK` 含义待确认。 |
 | 拓扑边界 | 当前图只确认模块/初步连接关系；端口、PoE、音频接口、施工长度和备用比例待技术确认。 |
 

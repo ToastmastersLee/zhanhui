@@ -90,7 +90,7 @@ def build() -> tuple[Path, list[str]]:
         {"id": "nps", "label": "NPS150", "subtitle": "协作/BYOM 路径待确认", "x": 845, "y": 560, "w": 180, "candidates": ["NPS150"], "badge": "×1", "badge_class": "listed", "initials": "NPS"},
         {"id": "meeting_av", "label": "S350 + HY300", "subtitle": "音视频外设", "x": 1090, "y": 560, "w": 190, "candidates": ["S350", "HY300"], "badge": "清单已列", "badge_class": "listed", "initials": "AV"},
         {"id": "share", "label": "WP50 + C5 + H5", "subtitle": "无线传屏/按键", "x": 845, "y": 700, "w": 215, "candidates": ["WP50"], "badge": "清单已列", "badge_class": "listed", "initials": "BYOM"},
-        {"id": "schedule", "label": "QCD100 + CPL50", "subtitle": "预约/小件；实接或静态待定", "x": 1090, "y": 700, "w": 215, "candidates": ["CPL50"], "badge": "演示方式待定", "badge_class": "pending", "initials": "RS"},
+        {"id": "schedule", "label": "CPL50 + QCD100", "subtitle": "CPL50实接待定；QCD100为Dongle盒", "x": 1090, "y": 700, "w": 215, "candidates": ["CPL50"], "badge": "QCD100无源收纳盒", "badge_class": "listed", "initials": "RS"},
         {"id": "ifps", "label": "65-inch OPS Displays", "subtitle": "HN1000 Pro / QA1400 Pro / Ultra", "x": 1360, "y": 625, "w": 175, "h": 120, "candidates": [], "badge": "OPS 范围待核", "badge_class": "pending", "initials": "IFP"},
     ]
 

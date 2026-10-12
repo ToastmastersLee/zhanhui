@@ -131,6 +131,7 @@ status: "draft - lengths and final electrical design pending"
 >
 > 1.  NPS150的供网在基础设施区描述，这里不再赘述
 > 2. CPL50的供网在基础设施区描述，这里不再赘述
+> 3. QCD100 为 Dongle 放置收纳盒（无源物理配件），仅作台面放置，无需供电及信号线缆连接。
 
 
 
