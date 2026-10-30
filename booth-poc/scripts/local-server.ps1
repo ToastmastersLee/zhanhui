@@ -17,12 +17,18 @@ function Read-OwnedServer {
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
     $process = Get-Process -Id $state.processId -ErrorAction SilentlyContinue
     if ($null -eq $process) { return $null }
+    # A stale PID can now belong to a protected system process whose StartTime
+    # is unavailable. Only Node can be our server; do not inspect or stop others.
+    if ($process.ProcessName -ne 'node') { return $null }
+    if ($null -eq $process.StartTime) {
+        throw 'Cannot verify the saved Node process. No process was stopped; check .runtime\server.json and port 5173.'
+    }
     # Check both process identity and its exact Vite entrypoint, protecting against PID reuse.
     if ($process.StartTime.ToUniversalTime().ToString('o') -ne $state.startedAt) {
         return $null
     }
     $info = Get-CimInstance Win32_Process -Filter "ProcessId = $($state.processId)"
-    if ($null -eq $info -or -not $info.CommandLine.Contains(('"' + $vitePath + '"'))) {
+    if ($null -eq $info -or [string]::IsNullOrEmpty($info.CommandLine) -or -not $info.CommandLine.Contains(('"' + $vitePath + '"'))) {
         throw 'Saved process does not match this project. No process was stopped.'
     }
     return $process

@@ -5,6 +5,7 @@ import { INITIAL, BOOTH, clone, constrain, worldSize, checkLayout, parseLayout, 
 import './style.css';
 import { CABLE_TYPES, CONNECTIONS, cableRoutes } from './wiring.js';
 
+let pendingFrame=0;
 const $=s=>document.querySelector(s), viewport=$('#viewport'), STORAGE='iq-dubai-booth-v1';
 let items=syncAttachments(clone(INITIAL)), selectedId='back-a', undoStack=[], redoStack=[], dragStart=null, currentView='perspective', toastTimer;
 try {const saved=localStorage.getItem(STORAGE);if(saved)items=parseLayout(JSON.parse(saved));}catch { /* Keep a usable default if storage is unavailable or stale. */ }
@@ -13,13 +14,13 @@ const perspective=new THREE.PerspectiveCamera(40,1,.05,100);
 const ortho=new THREE.OrthographicCamera(-4,4,4,-4,.05,100);
 let camera=perspective;
 let renderer;
-try{renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});}catch(error){$('#webgl-error').hidden=false;throw error;}
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setClearColor('#eaf0f3');viewport.prepend(renderer.domElement);
+try{renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:false});}catch(error){$('#webgl-error').hidden=false;throw error;}
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setClearColor('#eaf0f3');viewport.prepend(renderer.domElement);
 renderer.domElement.setAttribute('aria-label','可旋转和调整物件的展位三维视图');
 const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=2;orbit.maxDistance=24;orbit.maxPolarAngle=Math.PI/2-.015;
 const transform=new TransformControls(camera,renderer.domElement);transform.setSize(.7);transform.setTranslationSnap(.05);scene.add(transform.getHelper());
 scene.add(new THREE.HemisphereLight(0xffffff,0x8a9ba2,2.8));
-const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(1,9,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6});sun.shadow.normalBias=.025;scene.add(sun);
+const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(1,9,6);sun.castShadow=false;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6});sun.shadow.normalBias=.025;scene.add(sun);
 const fill=new THREE.DirectionalLight(0xd8e9ff,1.5);fill.position.set(-6,4,-2);scene.add(fill);
 const stage=new THREE.Group(), models=new Map(), walls=[];scene.add(stage);
 function material(color,opts={}){return new THREE.MeshStandardMaterial({color,roughness:.8,...opts});}
@@ -31,10 +32,12 @@ const floorBase=box(5,.08,5,'#9caeb8',stage,0,-.06,0);
 const floorSurface=box(4.6,.02,4.8,'#c6d0d3',stage,0,-.01,.1);
 const floorGrid=new THREE.GridHelper(5,10,0x91a7b0,0xb1c0c7);floorGrid.position.y=.006;stage.add(floorGrid);
 for(const [wall,axis,sign] of [['back','z',-1],['left','x',-1],['right','x',1]]){const mesh=new THREE.Group();stage.add(mesh);walls.push({mesh,wall,axis,sign});}
-function updateWalls(){for(const wall of walls){dispose(wall.mesh);wall.mesh.clear();const h=items.find(o=>o.id===wall.wall+'-hatch');const horizontal=wall.wall==='back',min=horizontal?-2500:-2300,max=2500,along=horizontal?h.x:h.z,a=along-h.width/2,b=along+h.width/2;
-const piece=(lo,hi,bottom,top)=>{if(hi<=lo||top<=bottom)return;box(horizontal?(hi-lo)/1000:.2,(top-bottom)/1000,horizontal?.2:(hi-lo)/1000,'#fafcfb',wall.mesh,horizontal?(lo+hi)/2000:wall.sign*2.4,(bottom+top)/2000,horizontal?-2.4:(lo+hi)/2000);};
-piece(min,a,0,4000);piece(b,max,0,4000);piece(a,b,0,h.bottom);piece(a,b,h.bottom+h.height,4000);
-}}
+function updateWalls(){for(const wall of walls){dispose(wall.mesh);wall.mesh.clear();const horizontal=wall.wall==='back',min=horizontal?-2500:-2300,max=2500;
+const holes=items.filter(o=>o.kind==='hatch'&&o.wall===wall.wall).map(h=>({a:(horizontal?h.x:h.z)-h.width/2,b:(horizontal?h.x:h.z)+h.width/2,lo:h.bottom,hi:h.bottom+h.height}));
+const xs=[...new Set([min,max,...holes.flatMap(h=>[Math.max(min,h.a),Math.min(max,h.b)])])].sort((a,b)=>a-b),ys=[...new Set([0,4000,...holes.flatMap(h=>[h.lo,h.hi])])].sort((a,b)=>a-b);
+for(let i=0;i<xs.length-1;i++)for(let j=0;j<ys.length-1;j++){const lo=xs[i],hi=xs[i+1],bottom=ys[j],top=ys[j+1];if(holes.some(h=>(lo+hi)/2>h.a&&(lo+hi)/2<h.b&&(bottom+top)/2>h.lo&&(bottom+top)/2<h.hi))continue;
+box(horizontal?(hi-lo)/1000:.2,(top-bottom)/1000,horizontal?.2:(hi-lo)/1000,'#fafcfb',wall.mesh,horizontal?(lo+hi)/2000:wall.sign*2.4,(bottom+top)/2000,horizontal?-2.4:(lo+hi)/2000);
+}}}
 // Graphic ribbons and headings are schematic, not extracted artwork.
 const ribbonBack=box(4.59,.58,.012,'#214f63',stage,0,3.36,-2.292);walls[0].decor=[ribbonBack];
 const rb=panelText('IQ  |  Q-NEX',stage,3.0,.49,0,3.36,-2.282,'#ffffff','#214f63');walls[0].decor.push(rb);
@@ -65,7 +68,7 @@ function makeModel(o){const g=new THREE.Group(),w=o.width/1000,h=o.height/1000,d
   if(o.wall==='right'||o.id==='right-cabinet')g.rotation.y=-Math.PI/2;
   g.position.set(o.x/1000,(o.bottom+o.height/2)/1000,o.z/1000);scene.add(g);models.set(o.id,g);return g;
 }
-function rebuild(){syncAttachments(items);updateWalls();transform.detach();for(const g of models.values()){scene.remove(g);dispose(g);}models.clear();items.forEach(makeModel);select(selectedId);}
+function rebuild(){syncAttachments(items);updateWalls();transform.detach();for(const g of models.values()){scene.remove(g);dispose(g);}models.clear();items.forEach(makeModel);select(selectedId);invalidate();}
 function selected(){return items.find(o=>o.id===selectedId);}
 function drawSelection(){const o=selected(),g=models.get(selectedId);if(!g)return;const [w,h,d]=worldSize(o).map(v=>v/1000);selectedBox.box.setFromCenterAndSize(g.position,new THREE.Vector3(w+.018,h+.018,d+.018));dispose(heightMeasure);heightMeasure.clear();if(o.bottom>0){const x=g.position.x+(w/2+.13),z=g.position.z+d/2+.04;line([[x,0,z],[x,o.bottom/1000,z]],'#008c82',heightMeasure);line([[x-.06,0,z],[x+.06,0,z]],'#008c82',heightMeasure);line([[x-.06,o.bottom/1000,z],[x+.06,o.bottom/1000,z]],'#008c82',heightMeasure);label(`${Math.round(o.bottom)} mm`,heightMeasure,[x+.2,o.bottom/2000,z],.12,'#087d7a');}}
 function select(id){heightMode=false;selectedId=id;const o=selected();transform.setMode('translate');transform.attach(models.get(id));transform.showX=(o.wall==='floor'||o.wall==='back')&&o.kind!=='strip';transform.showY=o.wall!=='floor'&&!o.parentId;transform.showZ=(o.wall==='floor'||o.wall==='left'||o.wall==='right')&&o.kind!=='strip';renderList();renderInspector();appendInspector();drawSelection();renderChecks();updateWires();}
@@ -75,7 +78,7 @@ function renderInspector(){const o=selected();$('#inspector').innerHTML=`<h2 cla
 function appendInspector(){const o=selected();if(o.kind==='hatch')$('#inspector').insertAdjacentHTML('beforeend','<button id="resize-hatch" class="primary">调整开口高度 ↕</button><p class="constraint">拖动开口顶部的绿色手柄，下沿保持不变。再次点击切回移动。</p>');if(o.kind==='hatch')$('#inspector').querySelector('[data-field=depth]').disabled=true;if(o.parentId){$('#inspector').querySelectorAll('[data-field]').forEach(input=>{if(o.kind==='strip'||['bottom','width','height','depth'].includes(input.dataset.field))input.disabled=true;});}$('#inspector').insertAdjacentHTML('beforeend','<div class="field-title">关联走线 / CONNECTIONS</div>'+cableRoutes(items).filter(c=>related(c,o.id)).map(c=>'<div class="route-row" style="border-color:'+CABLE_TYPES[c.type].color+'">'+c.name+' → '+items.find(o=>o.id===c.target).name+'</div>').join(''));}
 function renderChecks(){const warnings=checkLayout(items);$('#check-count').textContent=warnings.length?`${warnings.length} 项提醒`:'通过';$('#checks').innerHTML=warnings.length?warnings.map(w=>`<div class="warning">△ ${w}</div>`).join(''):'<div class="check-ok">✓ 物件均位于展位范围内<br/>✓ 未发现物件外框重叠</div>';$('#checks').innerHTML+='<p class="checks-note">按简化包围盒检查；不代表承重、支架、走线或施工验收。</p>';}
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),3000);}
-function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({version:2,items}));$('#save-status').textContent='✓ 已保存到此浏览器';}catch{$('#save-status').textContent='无法自动保存，请导出方案';}$('#undo').disabled=!undoStack.length;$('#redo').disabled=!redoStack.length;}
+function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({version:3,items}));$('#save-status').textContent='✓ 已保存到此浏览器';}catch{$('#save-status').textContent='无法自动保存，请导出方案';}$('#undo').disabled=!undoStack.length;$('#redo').disabled=!redoStack.length;}
 function commit(previous){if(JSON.stringify(previous)!==JSON.stringify(items)){undoStack.push(previous);if(undoStack.length>60)undoStack.shift();redoStack=[];}persist();}
 function edit(key,value){const o=selected(),before=clone(items);if(!Number.isFinite(value)){renderInspector();return;}const limits={width:[30,4600],height:[20,4000],depth:[20,2000],bottom:[0,4000],x:[-10000,10000],z:[-10000,10000]};const [min,max]=limits[key];o[key]=Math.round(Math.max(min,Math.min(max,value)));if(o.kind==='hatch'&&key==='height')o.height=Math.min(o.height,4000-o.bottom);constrain(o);if(o.kind==='laptop'){const p=items.find(p=>p.id===o.parentId);o.offsetX=o.x-p.x;o.offsetZ=o.z-p.z;}if(o[key]!==value)toast('已按展位边界或尺寸范围调整数值');rebuild();commit(before);}
 $('#objects').addEventListener('click',e=>{const row=e.target.closest('[data-id]');if(row)select(row.dataset.id);});
@@ -83,7 +86,7 @@ $('#inspector').addEventListener('change',e=>{if(e.target.dataset.field)edit(e.t
 $('#inspector').addEventListener('click',e=>{const btn=e.target.closest('[data-nudge]');if(btn)edit('bottom',selected().bottom+Number(btn.dataset.nudge));});
 transform.addEventListener('dragging-changed',e=>{orbit.enabled=!e.value;if(e.value)dragStart=clone(items);else if(dragStart){commit(dragStart);dragStart=null;if(heightMode){heightMode=false;}rebuild();}});
 transform.addEventListener('objectChange',()=>{const o=selected(),g=models.get(o.id);if(heightMode){o.height=Math.round(Math.max(20,Math.min(4000-o.bottom,heightProxy.position.y*1000-o.bottom)));heightProxy.position.y=(o.bottom+o.height)/1000;g.scale.y=o.height/heightBase;g.position.y=(o.bottom+o.height/2)/1000;}else if(!o.parentId||o.kind==='laptop'){o.x=g.position.x*1000;o.z=g.position.z*1000;o.bottom=g.position.y*1000-o.height/2;constrain(o);if(o.kind==='laptop'){const p=items.find(p=>p.id===o.parentId);o.offsetX=o.x-p.x;o.offsetZ=o.z-p.z;}}
-syncAttachments(items);for(const obj of items){const model=models.get(obj.id);model.position.set(obj.x/1000,(obj.bottom+obj.height/2)/1000,obj.z/1000);}updateWalls();drawSelection();renderInspector();appendInspector();renderChecks();updateWires();});
+syncAttachments(items);for(const obj of items){const model=models.get(obj.id);model.position.set(obj.x/1000,(obj.bottom+obj.height/2)/1000,obj.z/1000);}if(o.kind==='hatch')updateWalls();drawSelection();renderInspector();appendInspector();renderChecks();updateWires();});
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let pointerDown;
 renderer.domElement.addEventListener('pointerdown',e=>{pointerDown={x:e.clientX,y:e.clientY,axis:transform.axis};});
 renderer.domElement.addEventListener('pointerup',e=>{if(!pointerDown||e.button!==0||pointerDown.axis||transform.dragging||Math.hypot(e.clientX-pointerDown.x,e.clientY-pointerDown.y)>4)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObjects([...models.values()],true)[0];if(hit){let object=hit.object;while(!object.userData.id&&object.parent)object=object.parent;if(object.userData.id)select(object.userData.id);}});
@@ -96,18 +99,21 @@ function redo(){if(!redoStack.length)return;undoStack.push(clone(items));items=r
 $('#undo').onclick=undo;$('#redo').onclick=redo;
 document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}if(e.key==='Escape')setView('perspective');});
 $('#reset').onclick=()=>{const before=clone(items);items=syncAttachments(clone(INITIAL));rebuild();commit(before);toast('已恢复图纸布局，可用撤销返回。');};
-$('#export').onclick=()=>{const payload={version:1,project:'Dubai booth POC',unit:'mm',connections:CONNECTIONS,booth:BOOTH,exportedAt:new Date().toISOString(),items};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='dubai-booth-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('已导出方案，包含全部位置和尺寸。');};
+$('#export').onclick=()=>{const payload={version:3,project:'Dubai booth POC',unit:'mm',connections:CONNECTIONS,booth:BOOTH,exportedAt:new Date().toISOString(),items};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='dubai-booth-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('已导出方案，包含全部位置和尺寸。');};
 $('#import').onclick=()=>$('#import-file').click();$('#import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>100000)throw Error('方案文件过大');const next=parseLayout(JSON.parse(await file.text())),before=clone(items);items=next;rebuild();commit(before);toast('已导入方案，可用撤销返回。');}catch(error){toast(`导入失败：${error.message}`);}e.target.value='';};
 let heightMode=false,heightBase=250;const heightProxy=new THREE.Object3D();scene.add(heightProxy);
 $('#inspector').addEventListener('click',e=>{if(e.target.id!=='resize-hatch')return;if(heightMode){select(selectedId);return;}const o=selected();heightMode=true;heightBase=o.height;heightProxy.position.set(o.x/1000,(o.bottom+o.height)/1000,o.z/1000);transform.attach(heightProxy);transform.showX=false;transform.showZ=false;transform.showY=true;toast('拖动绿色手柄调整高度；下沿固定');});
 const wireGroup=new THREE.Group();scene.add(wireGroup);
 function related(c,id){return [c.source,c.hatch,c.target].includes(id)||items.find(o=>o.id===c.target)?.parentId===id;}
-function updateWires(){dispose(wireGroup);wireGroup.clear();const enabled=$('#wiring').checked;wireGroup.visible=enabled;if(!enabled)return;const routes=cableRoutes(items),hasRelated=routes.some(c=>related(c,selectedId));for(const c of routes){if(!$('#wire-'+c.type).checked)continue;const active=related(c,selectedId),opacity=!hasRelated||active?1:.32;for(const seg of c.segments){const geometry=new THREE.BufferGeometry().setFromPoints(seg.points.map(p=>new THREE.Vector3(...p.map(n=>n/1000))));const mat=seg.hidden?new THREE.LineDashedMaterial({color:CABLE_TYPES[c.type].color,dashSize:.055,gapSize:.025,depthTest:false,transparent:true,opacity}):new THREE.LineBasicMaterial({color:CABLE_TYPES[c.type].color,depthTest:false,transparent:true,opacity});const l=new THREE.Line(geometry,mat);l.computeLineDistances();l.renderOrder=30;wireGroup.add(l);}
-if(active){const point=c.segments[0].points[2].map(n=>n/1000);const tag=label(c.name+' · 墙内',wireGroup,[point[0]+.1,point[1]+.12,point[2]],.1,CABLE_TYPES[c.type].color);tag.material.depthTest=false;tag.renderOrder=31;}}
+function updateWires(){dispose(wireGroup);wireGroup.clear();const routes=cableRoutes(items),used=new Set(routes.map(c=>c.type));for(const [type,config] of Object.entries(CABLE_TYPES)){const checkbox=$('#wire-'+type),label=checkbox.closest('label');label.hidden=!used.has(type);label.style.color=config.color;}const enabled=$('#wiring').checked;wireGroup.visible=enabled;if(!enabled)return;const hasRelated=routes.some(c=>related(c,selectedId));for(const c of routes){if(!$('#wire-'+c.type).checked)continue;const active=related(c,selectedId),opacity=!hasRelated||active?1:.32;for(const seg of c.segments){const geometry=new THREE.BufferGeometry().setFromPoints(seg.points.map(p=>new THREE.Vector3(...p.map(n=>n/1000))));const mat=seg.hidden?new THREE.LineDashedMaterial({color:CABLE_TYPES[c.type].color,dashSize:.055,gapSize:.025,depthTest:false,transparent:true,opacity}):new THREE.LineBasicMaterial({color:CABLE_TYPES[c.type].color,depthTest:false,transparent:true,opacity});const l=new THREE.Line(geometry,mat);l.computeLineDistances();l.renderOrder=30;wireGroup.add(l);}
+if(active){const point=c.segments[0].points.at(-1).map(n=>n/1000);const tag=label(c.name+' · 墙内',wireGroup,[point[0]+.1,point[1]+.12,point[2]],.1,CABLE_TYPES[c.type].color);tag.material.depthTest=false;tag.renderOrder=31;}}
 for(const [text,pos] of [['地板下 · HDMI × 2 + USB × 2',[0,.06,-.85]],['柜内排插 / 台面笔记本',[-1.8,.65,.5]],['柜内排插 / 台面笔记本',[1.8,.65,.5]]]){const tag=label(text,wireGroup,pos,.105,'#586f88');tag.material.depthTest=false;tag.renderOrder=31;}}
-for(const id of ['wiring','wire-power','wire-hdmi','wire-usb'])$('#'+id).onchange=updateWires;
-new ResizeObserver(resize).observe(viewport);rebuild();setView('perspective');persist();
-renderer.setAnimationLoop(()=>{orbit.update();const wiring=$('#wiring').checked;for(const wall of walls){const fade=wiring||($('#walls').checked&&(currentView==='top'||camera.position[wall.axis]*wall.sign>2.5));wall.mesh.traverse(m=>{if(m.material){m.material.transparent=fade;m.material.opacity=fade?(wiring?.19:.12):1;m.material.depthWrite=!fade;m.castShadow=!fade;}});for(const decor of wall.decor)decor.visible=!fade;}
+for(const id of ['wiring',...Object.keys(CABLE_TYPES).map(type=>'wire-'+type)])$('#'+id).onchange=updateWires;
+new ResizeObserver(()=>{resize();invalidate();}).observe(viewport);rebuild();setView('perspective');persist();
+function invalidate(){if(!pendingFrame&&!document.hidden)pendingFrame=requestAnimationFrame(draw);}
+function draw(){pendingFrame=0;orbit.update();const wiring=$('#wiring').checked;for(const wall of walls){const fade=wiring||($('#walls').checked&&(currentView==='top'||camera.position[wall.axis]*wall.sign>2.5));wall.mesh.traverse(m=>{if(m.material){m.material.transparent=fade;m.material.opacity=fade?(wiring?.19:.12):1;m.material.depthWrite=!fade;m.castShadow=!fade;}});for(const decor of wall.decor)decor.visible=!fade;}
 for(const floor of [floorBase,floorSurface]){floor.material.transparent=wiring;floor.material.opacity=wiring?.22:1;floor.material.depthWrite=!wiring;}
 for(const o of items.filter(o=>o.kind==='cabinet'))models.get(o.id)?.traverse(m=>{if(m.material){m.material.transparent=wiring;m.material.opacity=wiring?.19:1;m.material.depthWrite=!wiring;}});
-renderer.render(scene,camera);});
+renderer.render(scene,camera);}
+orbit.addEventListener('change',invalidate);transform.addEventListener('change',invalidate);
+document.addEventListener('change',invalidate);document.addEventListener('click',invalidate);document.addEventListener('keydown',invalidate);document.addEventListener('visibilitychange',invalidate);invalidate();
