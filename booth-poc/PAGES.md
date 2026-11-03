@@ -1,5 +1,13 @@
 # 展位模拟器 GitHub Pages 发布与交接
 
+## 2026-11-03 POC 04 发布
+
+- 公网提交：`0c7cfad6c76d9c8005e96a5460b4b73247e5cb7e`；[Pages 工作流](https://github.com/ToastmastersLee/q/actions/runs/41597811140)成功。
+- 本地8项测试和构建通过；发布仅更新 `booth/`，公网构建文件哈希及六个既有入口已验证。
+- 线上浏览器检查了场景渲染、直接刷新、取电点开关和 HDMI/USB 图例。未进行本次线上 JSON 文件导出回导及控制台错误检查，后续需要时补验。
+- 包含本次 LDP100、SL100、左柜网络设备、CPL50 线路和取电点调整；本地与线上浏览器保存分开，交换布局请使用 JSON。
+
+
 更新：2026-10-30。公开入口：https://toastmasterslee.github.io/q/booth/
 
 维护源：`D:\Github\IQ\Zhanhui\booth-poc`。公开仓库：`ToastmastersLee/q`，分支`main`，Pages来源为仓库根目录；本应用只管理`booth/`。不上传项目文档、源码仓库、截图、`.runtime/`或整个私有仓库。构建包含Three.js许可证，资源使用相对路径。
